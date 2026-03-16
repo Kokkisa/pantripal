@@ -69,7 +69,7 @@ export default function ItemsList({ inventory, spaces, onClose, onEditItem }) {
               flex: col.key === "name" ? 2.5 : col.key === "space" ? 2 : 1,
               padding:"8px 6px", fontSize:10, fontWeight:700,
               color: sortKey === col.key ? "#d97706" : "#6b7280",
-              textTransform:"uppercase", letterSpacing:"0.05em",
+              textTransform:"uppercase", letterSpacing:"0.10em",
               cursor:"pointer", userSelect:"none", display:"flex", alignItems:"center", gap:3,
             }}>
             {col.label}

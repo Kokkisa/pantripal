@@ -15,11 +15,11 @@ export default function SearchOverlay({ searchQuery, setSearchQuery, inventory, 
 
   return (
     <div onClick={()=>{ onClose(); }} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:200, display:"flex", alignItems:"flex-start", justifyContent:"center" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:"min(390px,100vw)", background:"#faf9f7", borderRadius:"0 0 28px 28px", maxHeight:"85vh", overflow:"auto" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"min(390px,100vw)", background:"#faf9f7", borderRadius:"0 0 28px 28px", maxHeight:"85vh", overflow:"auto", animation:"slideDown 0.3s ease-out" }}>
         <div style={{ background:"#1e1b18", padding:"16px 16px 12px" }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", background:"rgba(255,255,255,0.12)", borderRadius:14, padding:"10px 14px" }}>
             <span>🔍</span>
-            <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Search your pantry..." autoFocus style={{ background:"transparent", border:"none", outline:"none", color:"white", fontSize:15, fontWeight:500, flex:1, fontFamily:"'DM Sans',sans-serif" }} />
+            <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="What are you looking for?" autoFocus style={{ background:"transparent", border:"none", outline:"none", color:"white", fontSize:15, fontWeight:500, flex:1, fontFamily:"'DM Sans',sans-serif" }} />
             <span onClick={onClose} style={{ color:"#9ca3af", cursor:"pointer", fontSize:20 }}>×</span>
           </div>
         </div>
@@ -27,13 +27,13 @@ export default function SearchOverlay({ searchQuery, setSearchQuery, inventory, 
           {searchQuery.length < 2 ? (
             <div style={{ textAlign:"center", padding:"40px 20px", color:"#9ca3af" }}>
               <div style={{ fontSize:40, marginBottom:10 }}>🔍</div>
-              <p style={{ fontWeight:600, fontSize:14 }}>Search by name, brand or category</p>
+              <p style={{ fontWeight:600, fontSize:14 }}>Try a name, brand, or category</p>
             </div>
           ) : results.length === 0 ? (
             <div style={{ textAlign:"center", padding:"40px 20px", color:"#9ca3af" }}>
               <div style={{ fontSize:40, marginBottom:10 }}>😕</div>
-              <p style={{ fontWeight:600, fontSize:14 }}>"{searchQuery}" not found</p>
-              <p style={{ fontSize:12, margin:"4px 0 16px" }}>Not in your pantry yet</p>
+              <p style={{ fontWeight:600, fontSize:14 }}>Can't find "{searchQuery}"</p>
+              <p style={{ fontSize:12, margin:"4px 0 16px" }}>It's not in your pantry yet</p>
               <button onClick={()=>onAddItem(searchQuery)} style={S.btn("#d97706")}>+ Add "{searchQuery}"</button>
             </div>
           ) : results.map(item => {
@@ -54,7 +54,7 @@ export default function SearchOverlay({ searchQuery, setSearchQuery, inventory, 
                   </div>
                 </div>
                 <div style={{ background:"#f9fafb", borderRadius:13, padding:"10px 12px" }}>
-                  <p style={{ margin:"0 0 7px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em" }}>📍 Where to find it</p>
+                  <p style={{ margin:"0 0 7px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>📍 Where to find it</p>
                   <div style={{ display:"flex", gap:10, alignItems:"center" }}>
                     <div style={{ width:80, flexShrink:0 }}><ShelfPhoto shelf={shelf} space={space} size="sm" refreshKey={photoVersion} /></div>
                     <div>

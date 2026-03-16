@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import S from "../lib/styles.js";
 import { IS_DEMO } from "../lib/firebaseClient.js";
 import { SET_SCREEN, UPDATE_ITEM, UPDATE_META, SET_ITEM_AND_SCREEN } from "../hooks/useAddReducer.js";
@@ -6,7 +6,7 @@ import TabHint from "../components/TabHint.jsx";
 import ManualEntryForm from "../components/ManualEntryForm.jsx";
 import Toast from "../components/Toast.jsx";
 
-export default function AddTab({
+export default memo(function AddTab({
   addState, dispatch,
   inventory, spaces, userMeta,
   resolveIntelligence, handlePhotoCapture, startScan, stopScan,
@@ -21,14 +21,14 @@ export default function AddTab({
 
   if (screen==="choose") return(
     <div>
-      <div style={S.dh()}><h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>Add Item</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Choose entry method</p></div>
+      <div style={S.dh()}><h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>What are we adding today?</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Pick how you want to add it</p></div>
       <div style={S.content}>
         {!dismissedHints.add && <TabHint tab="add" onDismiss={() => onDismissHint("add")} />}
         {[
-          { id:"barcode", emoji:"📊", title:"Scan Barcode", sub:"Point at product barcode", accent:"#d97706", tag:"FASTEST" },
-          { id:"photo", emoji:"📸", title:"Snap a Photo", sub:"AI reads details automatically", accent:"#059669", tag:"AI POWERED" },
-          { id:"manual", emoji:"✏️", title:"Enter Manually", sub:"Smart unit auto-fills as you type", accent:"#2563eb", tag:"MANUAL" },
-          { id:"bill", emoji:"🧾", title:"Scan Bill", sub:"AI reads your receipt", accent:"#9333ea", tag:"BULK ADD" },
+          { id:"barcode", emoji:"📊", title:"Scan the barcode", sub:"Point the camera at any barcode — I'll do the rest", accent:"#d97706", tag:"QUICKEST" },
+          { id:"photo", emoji:"📸", title:"Photograph the label", sub:"I'll read the label and fill everything in ✨", accent:"#059669", tag:"MAGIC ✨" },
+          { id:"manual", emoji:"✏️", title:"I'll type it myself", sub:"Start typing and I'll suggest the right unit", accent:"#2563eb", tag:"CLASSIC" },
+          { id:"bill", emoji:"🧾", title:"Dump your whole receipt on me", sub:"Photo your receipt — I'll add every item at once", accent:"#9333ea", tag:"ONE SHOT" },
         ].map(opt=>(
           <div key={opt.id} onClick={()=>dispatch({type:SET_SCREEN,screen:opt.id})} style={{ background:opt.accent+"10", borderRadius:18, padding:"16px", marginBottom:10, cursor:"pointer", border:`1.5px solid ${opt.accent}22` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
@@ -51,18 +51,18 @@ export default function AddTab({
 
   if (screen==="barcode") return(
     <div>
-      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>{stopScan();dispatch({type:SET_SCREEN,screen:"choose"});}}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Scan Barcode</h1></div></div>
+      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>{stopScan();dispatch({type:SET_SCREEN,screen:"choose"});}}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Scan the barcode</h1></div></div>
       <div style={S.content}>
         <div style={{ background:"#1e1b18", borderRadius:24, minHeight:240, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", marginBottom:14, border:"2px dashed #d97706", position:"relative", overflow:"hidden" }}>
           {[0,1,2,3].map(i=><div key={i} style={{ position:"absolute", width:24, height:24, top:i<2?18:"auto", bottom:i>=2?18:"auto", left:i%2===0?18:"auto", right:i%2===1?18:"auto", borderTop:i<2?"3px solid #d97706":"none", borderBottom:i>=2?"3px solid #d97706":"none", borderLeft:i%2===0?"3px solid #d97706":"none", borderRight:i%2===1?"3px solid #d97706":"none", zIndex:1 }} />)}
-          {scanDone?<div style={{ textAlign:"center", padding:20 }}><div style={{ fontSize:44 }}>✅</div><p style={{ color:"#4ade80", fontWeight:800, fontSize:15, margin:"7px 0 0" }}>Found!</p></div>
+          {scanDone?<div style={{ textAlign:"center", padding:20 }}><div style={{ fontSize:44 }}>✅</div><p style={{ color:"#4ade80", fontWeight:800, fontSize:15, margin:"7px 0 0" }}>Got it! ✓</p></div>
           :scanning?<div id={scannerContainerId} style={{ width:"100%", minHeight:240 }} />
-          :<div style={{ textAlign:"center", padding:20, cursor:"pointer" }} onClick={startScan}><div style={{ fontSize:40, marginBottom:8 }}>📊</div><p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Tap to Scan</p><p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>Point camera at a barcode</p></div>}
+          :<div style={{ textAlign:"center", padding:20, cursor:"pointer" }} onClick={startScan}><div style={{ fontSize:40, marginBottom:8 }}>📊</div><p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Ready to scan — tap to start</p><p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>Hold steady over the barcode</p></div>}
         </div>
-        {scanError && <div style={{ background:"#fef3c7", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #fde68a" }}><p style={{ margin:0, fontSize:12, fontWeight:600, color:"#92400e" }}>⚠️ {scanError}</p></div>}
+        {scanError && <div style={{ background:"#fef3c7", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #fde68a" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge("#d97706")}>!</span><p style={{ margin:0, fontSize:12, fontWeight:600, color:"#92400e" }}>{scanError}</p></div></div>}
         <div style={S.gap()}>
-          <button style={S.btn("#d97706")} onClick={scanning?stopScan:startScan}>{scanning?"Stop Scanner":"📊 Start Scanner"}</button>
-          <button style={S.outline} onClick={()=>{stopScan();dispatch({type:SET_SCREEN,screen:"manual"});}}>Enter manually</button>
+          <button style={S.btn("#d97706")} onClick={scanning?stopScan:startScan}>{scanning?"Stop":"📊 Start scanning"}</button>
+          <button style={S.outline} onClick={()=>{stopScan();dispatch({type:SET_SCREEN,screen:"manual"});}}>Type it instead</button>
         </div>
       </div>
       <NavBar />
@@ -71,17 +71,17 @@ export default function AddTab({
 
   if (screen==="photo") return(
     <div>
-      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:"choose"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Snap a Photo</h1></div></div>
+      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:"choose"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Photograph the label</h1></div></div>
       <div style={S.content}>
         <div onClick={()=>photoRef.current?.click()} style={{ background:"#1e1b18", borderRadius:24, height:240, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", marginBottom:14, cursor:"pointer", border:"2px dashed #059669" }}>
           <div style={{ fontSize:46, marginBottom:10 }}>📸</div>
-          <p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Tap to photograph</p>
-          <p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>AI reads the label</p>
+          <p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Point at the label and tap</p>
+          <p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>I'll figure out the name, brand, and unit for you</p>
           <input ref={photoRef} type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={handlePhotoCapture} />
         </div>
         <div style={S.gap()}>
-          <button style={S.btn("#059669")} onClick={()=>photoRef.current?.click()}>📸 Open Camera</button>
-          <button style={S.outline} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>Enter manually</button>
+          <button style={S.btn("#059669")} onClick={()=>photoRef.current?.click()}>📸 Open camera</button>
+          <button style={S.outline} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>I'd rather type it</button>
         </div>
       </div>
       <NavBar />
@@ -92,8 +92,8 @@ export default function AddTab({
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"60px 24px", textAlign:"center", minHeight:680 }}>
       {item.imagePreview&&<div style={{ width:130, height:130, borderRadius:22, overflow:"hidden", marginBottom:20 }}><img src={item.imagePreview} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt="" /></div>}
       <div style={{ width:50, height:50, border:"5px solid #059669", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.9s linear infinite", margin:"0 auto 16px" }} />
-      <h2 style={{ fontSize:20, fontWeight:800, margin:"0 0 6px" }}>AI reading photo...</h2>
-      <p style={{ fontSize:13, color:"#6b7280", margin:0 }}>Identifying product & details</p>
+      <h2 style={{ fontSize:20, fontWeight:800, margin:"0 0 6px" }}>Reading the label...</h2>
+      <p style={{ fontSize:13, color:"#6b7280", margin:0 }}>Give me just a second ✨</p>
     </div>
   );
 
@@ -111,19 +111,19 @@ export default function AddTab({
 
   if (screen==="unit_mismatch") return(
     <div>
-      <div style={S.dh("#d97706")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Unit Mismatch ⚠️</h1></div></div>
+      <div style={S.dh("#d97706")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Hmm, different units</h1></div></div>
       <div style={S.content}>
         <div style={S.card}>
           <div style={S.gap(8)}>
-            <div style={{ background:"#f0fdf4", borderRadius:12, padding:"11px", border:"1.5px solid #bbf7d0" }}><p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Currently tracked as</p><p style={{ margin:0, fontWeight:800, fontSize:16, color:"#059669" }}>{unitMismatch?.existing?.qty} {unitMismatch?.oldUnit}</p></div>
-            <div style={{ background:"#fff7ed", borderRadius:12, padding:"11px", border:"1.5px solid #fde68a" }}><p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>You're adding in</p><p style={{ margin:0, fontWeight:800, fontSize:16, color:"#d97706" }}>{item.qty} {unitMismatch?.newUnit}</p></div>
-            <div style={{ background:"#fef2f2", borderRadius:12, padding:"10px", border:"1px solid #fecaca" }}><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>⚠️ {unitMismatch?.oldUnit} ≠ {unitMismatch?.newUnit}</p></div>
+            <div style={{ background:"#f0fdf4", borderRadius:12, padding:"11px", border:"1.5px solid #bbf7d0" }}><p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Already in your pantry as</p><p style={{ margin:0, fontWeight:800, fontSize:16, color:"#059669" }}>{unitMismatch?.existing?.qty} {unitMismatch?.oldUnit}</p></div>
+            <div style={{ background:"#fff7ed", borderRadius:12, padding:"11px", border:"1.5px solid #fde68a" }}><p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>You're adding in</p><p style={{ margin:0, fontWeight:800, fontSize:16, color:"#d97706" }}>{item.qty} {unitMismatch?.newUnit}</p></div>
+            <div style={{ background:"#fef2f2", borderRadius:12, padding:"10px", border:"1px solid #fecaca" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge()}>!</span><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>{unitMismatch?.oldUnit} ≠ {unitMismatch?.newUnit}</p></div></div>
           </div>
         </div>
         <div style={S.gap(8)}>
-          <button style={S.btn("#1e1b18")} onClick={()=>dispatch({type:SET_ITEM_AND_SCREEN,fields:{unit:unitMismatch?.newUnit},screen:"stock_add_confirm"})}>Switch to {unitMismatch?.newUnit}</button>
-          <button style={S.btn("#6b7280")} onClick={()=>dispatch({type:SET_ITEM_AND_SCREEN,fields:{unit:unitMismatch?.oldUnit},screen:"stock_add_confirm"})}>Keep {unitMismatch?.oldUnit}</button>
-          <button style={S.outline} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>Go back</button>
+          <button style={S.btn("#1e1b18")} onClick={()=>dispatch({type:SET_ITEM_AND_SCREEN,fields:{unit:unitMismatch?.newUnit},screen:"stock_add_confirm"})}>Use {unitMismatch?.newUnit} going forward</button>
+          <button style={S.btn("#6b7280")} onClick={()=>dispatch({type:SET_ITEM_AND_SCREEN,fields:{unit:unitMismatch?.oldUnit},screen:"stock_add_confirm"})}>Stick with {unitMismatch?.oldUnit}</button>
+          <button style={S.outline} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>Let me change that</button>
         </div>
       </div>
       <NavBar />
@@ -132,18 +132,18 @@ export default function AddTab({
 
   if (screen==="stock_add_confirm") return(
     <div>
-      <div style={S.dh("#2563eb")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Already In Stock!</h1></div></div>
+      <div style={S.dh("#2563eb")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>You already have some of this!</h1></div></div>
       <div style={S.content}>
         <div style={S.card}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <div style={{ flex:1, background:"#f0fdf4", borderRadius:12, padding:"11px", textAlign:"center", border:"1.5px solid #bbf7d0" }}>
-              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>In Stock</p>
+              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>You have</p>
               <p style={{ margin:0, fontWeight:800, fontSize:26, color:"#059669" }}>{existingStock?.qty}</p>
               <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{item.unit}</p>
             </div>
             <span style={{ fontSize:22, fontWeight:800, color:"#d97706" }}>+</span>
             <div style={{ flex:1, background:"#fff8f0", borderRadius:12, padding:"11px", textAlign:"center", border:"1.5px solid #fde68a" }}>
-              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Adding</p>
+              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Adding</p>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
                 <button onClick={()=>dispatch({type:UPDATE_ITEM,fields:{qty:Math.max(1,item.qty-1)}})} style={{ width:24, height:24, borderRadius:7, background:"white", border:"1px solid #fde68a", fontSize:14, cursor:"pointer", fontWeight:700 }}>−</button>
                 <span style={{ fontWeight:800, fontSize:24, color:"#d97706" }}>{item.qty}</span>
@@ -153,7 +153,7 @@ export default function AddTab({
             </div>
             <span style={{ fontSize:20, fontWeight:800, color:"#6b7280" }}>=</span>
             <div style={{ flex:1, background:"#1e1b18", borderRadius:12, padding:"11px", textAlign:"center" }}>
-              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Total</p>
+              <p style={{ margin:"0 0 1px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Will become</p>
               <p style={{ margin:0, fontWeight:800, fontSize:26, color:"white" }}>{(existingStock?.qty||0)+item.qty}</p>
               <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{item.unit}</p>
             </div>
@@ -167,7 +167,7 @@ export default function AddTab({
           </div>
           <p style={{ margin:"7px 0 0", fontSize:11, color:"#9ca3af" }}>💰 Optional — update if price changed</p>
         </div>
-        <button style={S.btn("#1e1b18", "white", savingItem)} disabled={savingItem} onClick={handleSaveNewItem}>{savingItem ? "Saving..." : `✅ Add ${item.qty} to Stock`}</button>
+        <button style={S.btn("#1e1b18", "white", savingItem)} disabled={savingItem} onClick={handleSaveNewItem}>{savingItem ? "Adding it now..." : `✅ Add ${item.qty} — update my pantry`}</button>
       </div>
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       <NavBar />
@@ -176,7 +176,7 @@ export default function AddTab({
 
   if (screen==="select_location") return(
     <div>
-      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Where does it live?</h1></div></div>
+      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:"manual"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Which shelf is this going home to?</h1></div></div>
       <div style={S.content}>
         {spaces.map(space=>(
           <div key={space.id} style={S.card}>
@@ -194,7 +194,7 @@ export default function AddTab({
             ))}
           </div>
         ))}
-        <button style={S.btn(selShelf?"#1e1b18":"#e5e7eb","white",!selShelf)} disabled={!selShelf} onClick={()=>dispatch({type:SET_SCREEN,screen:"set_stock"})}>Set Stock Levels →</button>
+        <button style={S.btn(selShelf?"#1e1b18":"#e5e7eb","white",!selShelf)} disabled={!selShelf} onClick={()=>dispatch({type:SET_SCREEN,screen:"set_stock"})}>Almost done →</button>
       </div>
       <NavBar />
     </div>
@@ -202,7 +202,7 @@ export default function AddTab({
 
   if (screen==="set_stock") return(
     <div>
-      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:meta.selSpace && meta.selShelf ? "manual" : "select_location"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>How many are you adding?</h1></div></div>
+      <div style={S.dh()}><div style={{ display:"flex", alignItems:"center" }}><button style={S.back} onClick={()=>dispatch({type:SET_SCREEN,screen:meta.selSpace && meta.selShelf ? "manual" : "select_location"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>How much are you stocking up?</h1></div></div>
       <div style={S.content}>
         {meta.selSpace && meta.selShelf && (
           <div style={{ background:"#f0fdf4", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #bbf7d0" }}>
@@ -211,7 +211,7 @@ export default function AddTab({
         )}
         <div style={S.card}>
           <div style={{ marginBottom:16 }}>
-            <label style={S.label}>Quantity</label>
+            <label style={S.label}>How many?</label>
             <div style={{ display:"flex", alignItems:"center", gap:12, background:"#f9fafb", borderRadius:14, padding:"12px 16px" }}>
               <button onClick={()=>dispatch({type:UPDATE_ITEM,fields:{qty:Math.max(0,item.qty-1)}})} style={{ width:42, height:42, borderRadius:12, background:"white", border:"2px solid #e5e7eb", fontSize:20, cursor:"pointer", fontWeight:700 }}>−</button>
               <div style={{ flex:1, textAlign:"center" }}><span style={{ fontWeight:800, fontSize:34 }}>{item.qty}</span><span style={{ fontSize:13, color:"#9ca3af", marginLeft:5 }}>{item.unit}</span></div>
@@ -219,13 +219,13 @@ export default function AddTab({
             </div>
           </div>
           <div>
-            <label style={S.label}>Reorder Level (JIT trigger)</label>
+            <label style={S.label}>Alert me when it drops to...</label>
             <div style={{ display:"flex", alignItems:"center", gap:12, background:"#fff8f0", borderRadius:14, padding:"12px 16px", border:"1px solid #fde68a" }}>
               <button onClick={()=>dispatch({type:UPDATE_ITEM,fields:{reorder:Math.max(1,item.reorder-1)}})} style={{ width:42, height:42, borderRadius:12, background:"white", border:"2px solid #fde68a", fontSize:20, cursor:"pointer", fontWeight:700 }}>−</button>
               <div style={{ flex:1, textAlign:"center" }}><span style={{ fontWeight:800, fontSize:34, color:"#d97706" }}>{item.reorder}</span><span style={{ fontSize:13, color:"#9ca3af", marginLeft:5 }}>{item.unit}</span></div>
               <button onClick={()=>dispatch({type:UPDATE_ITEM,fields:{reorder:item.reorder+1}})} style={{ width:42, height:42, borderRadius:12, background:"#d97706", border:"none", color:"white", fontSize:20, cursor:"pointer", fontWeight:700 }}>+</button>
             </div>
-            <p style={{ margin:"7px 0 0", fontSize:11, color:"#9ca3af" }}>💡 Auto-adds to shopping list when stock hits {item.reorder} {item.unit}</p>
+            <p style={{ margin:"7px 0 0", fontSize:11, color:"#9ca3af" }}>💡 I'll remind you to restock when you're down to {item.reorder} {item.unit}</p>
           </div>
           <div style={{ marginTop:16 }}>
             <label style={S.label}>Price per {item.unit}</label>
@@ -233,10 +233,10 @@ export default function AddTab({
               <span style={{ fontWeight:800, fontSize:18, color:"#6b7280" }}>₹</span>
               <input type="number" min="0" step="0.01" placeholder="0.00" value={item.price} onChange={e=>dispatch({type:UPDATE_ITEM,fields:{price:e.target.value}})} style={{ ...S.input, border:"none", background:"transparent", padding:0, fontSize:20, fontWeight:800, flex:1 }} />
             </div>
-            <p style={{ margin:"7px 0 0", fontSize:11, color:"#9ca3af" }}>💰 Optional — helps track spending later</p>
+            <p style={{ margin:"7px 0 0", fontSize:11, color:"#9ca3af" }}>💰 I'll use this to track your spending over time</p>
           </div>
         </div>
-        <button style={S.btn("#1e1b18", "white", savingItem)} disabled={savingItem} onClick={handleSaveNewItem}>{savingItem ? "Saving..." : "💾 Save Item →"}</button>
+        <button style={S.btn("#1e1b18", "white", savingItem)} disabled={savingItem} onClick={handleSaveNewItem}>{savingItem ? "Adding it now..." : "💾 Add to my pantry →"}</button>
       </div>
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       <NavBar />
@@ -246,14 +246,14 @@ export default function AddTab({
   /* ── Bill Scan: capture ────────────────────────────────── */
   if (screen==="bill") return(
     <div>
-      <div style={S.dh("#9333ea")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"choose"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Scan Bill 🧾</h1></div></div>
+      <div style={S.dh("#9333ea")}><div style={{ display:"flex", alignItems:"center" }}><button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:SET_SCREEN,screen:"choose"})}>‹</button><h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Receipt scanner 🧾</h1></div></div>
       <div style={S.content}>
-        {IS_DEMO && <div style={{ background:"#fef3c7", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #fde68a" }}><p style={{ margin:0, fontSize:12, fontWeight:600, color:"#92400e" }}>⚠️ Bill scanning requires the AI API and won't work in demo mode.</p></div>}
+        {IS_DEMO && <div style={{ background:"#fef3c7", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #fde68a" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge("#d97706")}>!</span><p style={{ margin:0, fontSize:12, fontWeight:600, color:"#92400e" }}>Receipt scanning needs AI — sign in to use it. Works great once you're in!</p></div></div>}
         {meta.billError && <div style={{ background:"#fef2f2", borderRadius:12, padding:"10px 14px", marginBottom:10, border:"1px solid #fecaca" }}><p style={{ margin:0, fontSize:12, fontWeight:600, color:"#991b1b" }}>❌ {meta.billError}</p></div>}
         <div onClick={()=>!IS_DEMO && billRef.current?.click()} style={{ background:"#1e1b18", borderRadius:24, height:240, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", marginBottom:14, cursor:IS_DEMO?"not-allowed":"pointer", border:"2px dashed #9333ea", opacity:IS_DEMO?0.5:1 }}>
           <div style={{ fontSize:46, marginBottom:10 }}>🧾</div>
-          <p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Tap to photograph your bill</p>
-          <p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>AI extracts every line item</p>
+          <p style={{ color:"white", fontWeight:700, fontSize:14, margin:"0 0 3px" }}>Photo your receipt and I'll add everything at once</p>
+          <p style={{ color:"#9ca3af", fontSize:11, margin:0 }}>I'll pull out every item, price, and quantity</p>
           <input ref={billRef} type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={handleBillCapture} />
         </div>
         <div style={S.gap()}>
@@ -270,8 +270,8 @@ export default function AddTab({
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"60px 24px", textAlign:"center", minHeight:680 }}>
       {meta.billImagePreview&&<div style={{ width:130, height:170, borderRadius:18, overflow:"hidden", marginBottom:20, border:"3px solid #9333ea22" }}><img src={meta.billImagePreview} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt="" /></div>}
       <div style={{ width:50, height:50, border:"5px solid #9333ea", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.9s linear infinite", margin:"0 auto 16px" }} />
-      <h2 style={{ fontSize:20, fontWeight:800, margin:"0 0 6px" }}>Reading your bill...</h2>
-      <p style={{ fontSize:13, color:"#6b7280", margin:0 }}>Extracting items, prices & quantities</p>
+      <h2 style={{ fontSize:20, fontWeight:800, margin:"0 0 6px" }}>Going through your receipt...</h2>
+      <p style={{ fontSize:13, color:"#6b7280", margin:0 }}>This takes just a few seconds ✨</p>
     </div>
   );
 
@@ -279,25 +279,25 @@ export default function AddTab({
   if (screen==="bill_review") return <BillReviewScreen addState={addState} dispatch={dispatch} spaces={spaces} handleBillSave={handleBillSave} savingItem={savingItem} resetAdd={resetAdd} NavBar={NavBar} />;
 
   if (screen==="saved") return(
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"56px 24px", textAlign:"center", minHeight:680 }}>
-      <div style={{ fontSize:68, marginBottom:16 }}>{justSaved?.bill ? "🧾" : "🎉"}</div>
-      <h2 style={{ fontSize:26, fontWeight:800, margin:"0 0 8px", letterSpacing:"-0.8px" }}>
-        {justSaved?.bill ? "Bill Processed!" : justSaved?.existingStock ? "Stock Updated!" : "Item Saved!"}
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"56px 24px", textAlign:"center", minHeight:"100vh", background:"#0D9488" }}>
+      <div style={{ fontSize:72, marginBottom:20, animation:"popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>{justSaved?.bill ? "🧾" : "🎉"}</div>
+      <h2 style={{ fontSize:28, fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.8px", color:"white" }}>
+        {justSaved?.bill ? "Done! All added." : justSaved?.existingStock ? "Pantry updated!" : "It's in your pantry!"}
       </h2>
       {justSaved?.bill ? (
-        <p style={{ fontSize:13, color:"#6b7280", margin:"0 0 12px" }}>
-          {justSaved.restocked > 0 && <span><b>{justSaved.restocked}</b> item{justSaved.restocked>1?"s":""} restocked</span>}
+        <p style={{ fontSize:14, color:"rgba(255,255,255,0.8)", margin:"0 0 16px" }}>
+          {justSaved.restocked > 0 && <span><b style={{color:"white"}}>{justSaved.restocked}</b> item{justSaved.restocked>1?"s":""} restocked</span>}
           {justSaved.restocked > 0 && justSaved.added > 0 && ", "}
-          {justSaved.added > 0 && <span><b>{justSaved.added}</b> new item{justSaved.added>1?"s":""} added</span>}
+          {justSaved.added > 0 && <span><b style={{color:"white"}}>{justSaved.added}</b> new item{justSaved.added>1?"s":""} added</span>}
           {IS_DEMO && " (demo mode — won't persist)"}
         </p>
       ) : (
-        <p style={{ fontSize:13, color:"#6b7280", margin:"0 0 12px" }}><b>{justSaved?.name}</b> is now in your PantriPal{IS_DEMO?" (demo mode — won't persist)":""}</p>
+        <p style={{ fontSize:14, color:"rgba(255,255,255,0.8)", margin:"0 0 16px" }}><b style={{color:"white"}}>{justSaved?.name}</b> is home 🏠{IS_DEMO?" (demo mode — won't persist)":""}</p>
       )}
-      {!IS_DEMO&&<div style={{ background:"#f0fdf4", borderRadius:12, padding:"10px 14px", marginBottom:16, border:"1px solid #bbf7d0", width:"100%" }}><p style={{ margin:0, fontSize:12, color:"#15803d", fontWeight:600 }}>🔥 Saved to Firebase — synced to {userMeta.partner||"partner"}'s phone instantly</p></div>}
+      {!IS_DEMO&&<div style={{ background:"rgba(255,255,255,0.15)", borderRadius:14, padding:"12px 16px", marginBottom:20, width:"100%" }}><p style={{ margin:0, fontSize:13, color:"white", fontWeight:600 }}>🔥 Synced to {userMeta.partner||"partner"}'s phone right now ✨</p></div>}
       <div style={{...S.gap(), width:"100%"}}>
-        <button style={S.btn("#1e1b18")} onClick={resetAdd}>+ Add Another</button>
-        <button style={S.outline} onClick={()=>{setActiveTab("home");resetAdd();}}>← Home</button>
+        <button style={{ width:"100%", background:"white", color:"#0D9488", border:"none", borderRadius:16, padding:"16px", fontSize:15, fontWeight:700, cursor:"pointer" }} onClick={resetAdd}>+ Add another item</button>
+        <button style={{ width:"100%", background:"transparent", color:"rgba(255,255,255,0.9)", border:"2px solid rgba(255,255,255,0.3)", borderRadius:16, padding:"14px", fontSize:14, fontWeight:600, cursor:"pointer" }} onClick={()=>{setActiveTab("home");resetAdd();}}>Back to your pantry</button>
       </div>
       <NavBar />
     </div>
@@ -307,7 +307,7 @@ export default function AddTab({
   return <>
     {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
   </>;
-}
+})
 
 /* ════════════════════════════════════════════════════════════════
    Bill Review Screen — extracted as sub-component for local state
@@ -355,9 +355,9 @@ function BillReviewScreen({ addState, dispatch, spaces, handleBillSave, savingIt
       <div style={S.dh("#9333ea")}>
         <div style={{ display:"flex", alignItems:"center" }}>
           <button style={{...S.back,color:"white"}} onClick={()=>dispatch({type:"SET_SCREEN",screen:"choose"})}>‹</button>
-          <h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Bill Review 🧾</h1>
+          <h1 style={{ fontSize:20, fontWeight:800, margin:0 }}>Here's what I found 🧾</h1>
         </div>
-        <p style={{ margin:"4px 0 0", fontSize:12, color:"rgba(255,255,255,0.7)" }}>{billItems.length} item{billItems.length!==1?"s":""} found · {enabledCount} selected</p>
+        <p style={{ margin:"4px 0 0", fontSize:12, color:"rgba(255,255,255,0.7)" }}>{billItems.length} item{billItems.length!==1?"s":""} on your receipt · {enabledCount} selected to add</p>
       </div>
       <div style={S.content}>
         {billItems.map((bi, i) => {
@@ -384,7 +384,7 @@ function BillReviewScreen({ addState, dispatch, spaces, handleBillSave, savingIt
               {!isNew ? (
                 <div style={{ background:"#f0fdf4", borderRadius:10, padding:"8px 12px", border:"1px solid #bbf7d0" }}>
                   <p style={{ margin:0, fontSize:12, fontWeight:600, color:"#15803d" }}>
-                    ✅ Found in pantry — {space?.name || "?"} › {shelf?.name || "?"}
+                    ✅ Already in your pantry — I'll top it up · {space?.name || "?"} › {shelf?.name || "?"}
                   </p>
                   <p style={{ margin:"3px 0 0", fontSize:11, color:"#6b7280" }}>
                     Current stock: {bi.matched.qty} {bi.matched.unit} → will become {bi.matched.qty + bi.qty} {bi.matched.unit}
@@ -393,8 +393,8 @@ function BillReviewScreen({ addState, dispatch, spaces, handleBillSave, savingIt
               ) : enabled ? (
                 <div>
                   <div style={{ background:"#fefce8", borderRadius:10, padding:"8px 12px", marginBottom:8, border:"1px solid #fde68a" }}>
-                    <p style={{ margin:0, fontSize:12, fontWeight:700, color:"#92400e" }}>🆕 New item — not in your inventory</p>
-                    <p style={{ margin:"2px 0 0", fontSize:11, color:"#a16207" }}>Assign a space & shelf below</p>
+                    <p style={{ margin:0, fontSize:12, fontWeight:700, color:"#92400e" }}>🆕 New to your pantry — assign it a spot</p>
+                    <p style={{ margin:"2px 0 0", fontSize:11, color:"#a16207" }}>Where should this live?</p>
                   </div>
                   {/* Inline space → shelf picker */}
                   <div style={{ display:"flex", gap:8 }}>
@@ -444,7 +444,7 @@ function BillReviewScreen({ addState, dispatch, spaces, handleBillSave, savingIt
             disabled={savingItem || enabledCount === 0 || hasUnassigned}
             onClick={onSave}
           >
-            {savingItem ? "Saving..." : hasUnassigned ? "⚠️ Assign all locations first" : `✅ Save ${enabledCount} Item${enabledCount!==1?"s":""}`}
+            {savingItem ? "Adding everything now..." : hasUnassigned ? "Pick a shelf for each new item first" : `✅ Add all ${enabledCount} to my pantry`}
           </button>
           <button style={S.outline} onClick={()=>dispatch({type:"SET_SCREEN",screen:"choose"})}>← Back</button>
         </div>

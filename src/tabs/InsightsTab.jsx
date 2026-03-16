@@ -1,48 +1,19 @@
+import { memo } from "react";
 import S from "../lib/styles.js";
 import { stockLevel } from "../lib/pantriUtils.js";
 import { SB } from "../lib/pantriConstants.js";
+import { buildConsumptionMap, computePriceAlerts, computeABC, computeVED, computePredictions, computeWasteRisk } from "../lib/insightsLogic.js";
 import TabHint from "../components/TabHint.jsx";
 
-export default function InsightsTab({ inventory, history, spaces, dismissedHints, onDismissHint, NavBar }) {
-  const consumptionMap = {};
-  history.forEach(h => { consumptionMap[h.item] = (consumptionMap[h.item]||0) + Number(h.qty||0); });
-
-  const totalConsumed = Object.values(consumptionMap).reduce((s,v)=>s+v,0);
-  const sorted = inventory.map(i=>({...i,consumed:consumptionMap[i.name]||0})).sort((a,b)=>b.consumed-a.consumed);
-  let cum=0;
-  const abc={A:[],B:[],C:[]};
-  sorted.forEach(item=>{
-    cum+=item.consumed;
-    const pct=totalConsumed>0?cum/totalConsumed:1;
-    if(pct<=0.70)abc.A.push(item); else if(pct<=0.90)abc.B.push(item); else abc.C.push(item);
-  });
-
-  const ved={V:[],E:[],D:[]};
-  inventory.forEach(item=>{
-    const c=consumptionMap[item.name]||0;
-    if(item.category==="Baby"||item.reorder>=10||c>5) ved.V.push(item);
-    else if(c>=1||item.reorder>=2) ved.E.push(item);
-    else ved.D.push(item);
-  });
-
+export default memo(function InsightsTab({ inventory, history, spaces, dismissedHints, onDismissHint, NavBar }) {
+  // ── Shared logic imported from lib/insightsLogic.js ─────
+  const consumptionMap = buildConsumptionMap(history);
+  const abc = computeABC(inventory, history);
+  const ved = computeVED(inventory, history);
   const topItems = Object.entries(consumptionMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
-  const predictions = inventory.map(item=>{
-    const entries=history.filter(h=>h.item===item.name);
-    if(!entries.length) return null;
-    const total=entries.reduce((s,h)=>s+Number(h.qty),0);
-    const dates=entries.map(h=>new Date(h.time).getTime());
-    const span=Math.max(1,(Date.now()-Math.min(...dates))/86400000);
-    const rate=total/span;
-    const daysLeft=rate>0?Math.floor(item.qty/rate):null;
-    const expiryDays=item.expiry?Math.ceil((new Date(item.expiry)-new Date())/86400000):null;
-    const effective=expiryDays!=null&&daysLeft!=null?Math.min(daysLeft,expiryDays):daysLeft??expiryDays;
-    const rateLabel=rate>=1?`${rate.toFixed(1)} ${item.unit}/day`:`1 ${item.unit} every ${Math.round(1/rate)} days`;
-    return{...item,daysRemaining:effective,rateLabel,limitReason:expiryDays!=null&&daysLeft!=null&&expiryDays<daysLeft?"expiry":"usage"};
-  }).filter(Boolean).sort((a,b)=>(a.daysRemaining??999)-(b.daysRemaining??999));
-
-  const wasteRisk=inventory.filter(i=>i.expiry&&i.qty>0&&(new Date(i.expiry)-new Date())/86400000<=7);
-  const recentH=history.filter(h=>new Date(h.time).getTime()>Date.now()-30*86400000);
+  const predictions = computePredictions(inventory, history);
+  const wasteRisk = computeWasteRisk(inventory);
+  const recentH = history.filter(h=>new Date(h.time).getTime()>Date.now()-30*86400000);
 
   // ── Spending computations ─────────────────────────────────
   const pricedItems = inventory.filter(i => i.price);
@@ -52,15 +23,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
   pricedItems.forEach(i => { catValue[i.category || "Other"] = (catValue[i.category || "Other"] || 0) + i.price * i.qty; });
   const catValueSorted = Object.entries(catValue).sort((a, b) => b[1] - a[1]);
 
-  const priceAlerts = inventory.filter(i => {
-    const ph = i.priceHistory;
-    return ph && ph.length >= 2 && ph[ph.length - 1].price > ph[ph.length - 2].price;
-  }).map(i => {
-    const ph = i.priceHistory;
-    const curr = ph[ph.length - 1].price;
-    const prev = ph[ph.length - 2].price;
-    return { ...i, prev, curr, pctChange: ((curr - prev) / prev * 100) };
-  }).sort((a, b) => b.pctChange - a.pctChange);
+  const priceAlerts = computePriceAlerts(inventory);
 
   const thirtyDaysAgo = Date.now() - 30 * 86400000;
   const buyingTotal = inventory.reduce((sum, i) => {
@@ -93,14 +56,14 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
 
   return(
     <div>
-      <div style={S.dh()}><h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>Insights 📊</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Real intelligence from your pantry data</p></div>
+      <div style={S.dh()}><h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>Your insights 📊</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Here's what your pantry is telling you</p></div>
       <div style={S.content}>
         {!dismissedHints.insights && <TabHint tab="insights" onDismiss={() => onDismissHint("insights")} />}
 
         {/* ── Inventory Valuation ────────────────────────────── */}
         <div style={{ background:"linear-gradient(135deg, #d97706, #b45309)", borderRadius:18, padding:"20px 18px", marginBottom:10, color:"white" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>💰 Pantry Value</p>
+            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>💰 Your pantry is worth</p>
             <Tag label="LIVE" color="#fcd34d" bg="rgba(255,255,255,0.2)" />
           </div>
           <p style={{ margin:"0 0 4px", fontWeight:800, fontSize:36, letterSpacing:"-1px" }}>₹{totalValue.toLocaleString("en-IN")}</p>
@@ -127,7 +90,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         {/* ── Price Alerts ────────────────────────────────────── */}
         <div style={S.card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>📈 Price Alerts</p>
+            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>📈 Price changes spotted</p>
             <Tag label={priceAlerts.length > 0 ? `${priceAlerts.length} ALERT${priceAlerts.length>1?"S":""}` : "STABLE"} color={priceAlerts.length > 0 ? "#ef4444" : "#059669"} bg={priceAlerts.length > 0 ? "#fef2f2" : "#f0fdf4"} />
           </div>
           {priceAlerts.length === 0 ? (
@@ -149,18 +112,18 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         {/* ── Buying vs Consuming ─────────────────────────────── */}
         <div style={S.card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>🛒 Buying vs Consuming</p>
+            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>🛒 Are you buying faster than you eat?</p>
             <Tag label="30 DAYS" color="#2563eb" bg="#eff6ff" />
           </div>
           <div style={{ display:"flex", gap:8, marginBottom:10 }}>
             <div style={{ flex:1, background:"#fff7ed", borderRadius:14, padding:"14px 12px", textAlign:"center", border:"1px solid #fde68a" }}>
-              <p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Bought</p>
+              <p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Bought</p>
               <p style={{ margin:0, fontWeight:800, fontSize:22, color:"#d97706" }}>₹{buyingTotal.toFixed(0)}</p>
               <p style={{ margin:"2px 0 0", fontSize:10, color:"#9ca3af" }}>stocked up</p>
             </div>
             <div style={{ display:"flex", alignItems:"center" }}><span style={{ fontSize:18, color:"#9ca3af" }}>→</span></div>
             <div style={{ flex:1, background:"#f0fdf4", borderRadius:14, padding:"14px 12px", textAlign:"center", border:"1px solid #bbf7d0" }}>
-              <p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Consumed</p>
+              <p style={{ margin:"0 0 2px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Consumed</p>
               <p style={{ margin:0, fontWeight:800, fontSize:22, color:"#059669" }}>₹{consumptionTotal.toFixed(0)}</p>
               <p style={{ margin:"2px 0 0", fontSize:10, color:"#9ca3af" }}>used up</p>
             </div>
@@ -171,7 +134,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
                 {buyingTotal > consumptionTotal
                   ? `📦 ₹${(buyingTotal - consumptionTotal).toFixed(0)} stocking up — building reserves`
                   : buyingTotal < consumptionTotal
-                  ? `⚠️ ₹${(consumptionTotal - buyingTotal).toFixed(0)} more consumed than bought — depleting stock`
+                  ? `📉 ₹${(consumptionTotal - buyingTotal).toFixed(0)} more consumed than bought — depleting stock`
                   : "⚖️ Perfectly balanced — buying matches consumption"}
               </p>
             </div>
@@ -181,7 +144,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         {/* ── Spending by Category ────────────────────────────── */}
         <div style={S.card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>📊 Spending by Category</p>
+            <p style={{ margin:0, fontWeight:800, fontSize:14 }}>📊 Where your money goes</p>
             <Tag label="30 DAYS" color="#2563eb" bg="#eff6ff" />
           </div>
           {catSpendSorted.length === 0 ? (
@@ -228,7 +191,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={S.card}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>📊 ABC Analysis</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>📊 Your top items (ABC)</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
           <p style={{ margin:"0 0 10px", fontSize:11, color:"#9ca3af" }}>Pareto by consumption · A={abc.A.length} · B={abc.B.length} · C={abc.C.length}</p>
           {[{key:"A",label:"A — High Value",desc:"Top 70% of consumption",color:"#ef4444",bg:"#fef2f2",items:abc.A},
             {key:"B",label:"B — Medium",desc:"Next 20%",color:"#f97316",bg:"#fff7ed",items:abc.B},
@@ -249,7 +212,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={S.card}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>🔄 Consumption Patterns</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>🔄 What you use and when</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
           {topItems.length===0?<p style={{ margin:0, fontSize:12, color:"#9ca3af" }}>Log item usage to see patterns</p>
           :topItems.map(([name,qty],i)=>{
             const inv=inventory.find(it=>it.name===name);
@@ -266,7 +229,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={S.card}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>🔮 Predicted Reorder</p><Tag label="COMPUTED" color="#2563eb" bg="#eff6ff" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>🔮 When you'll run out</p><Tag label="COMPUTED" color="#2563eb" bg="#eff6ff" /></div>
           <p style={{ margin:"0 0 10px", fontSize:11, color:"#9ca3af" }}>Based on your actual usage rate · {predictions.length} items tracked</p>
           {predictions.length===0?<p style={{ margin:0, fontSize:12, color:"#9ca3af" }}>Log usage to generate predictions</p>
           :predictions.map((p,i)=>{
@@ -282,7 +245,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={S.card}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>♻️ Waste Risk</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>♻️ What might expire on you</p><Tag label="LIVE" color="#059669" bg="#f0fdf4" /></div>
           {wasteRisk.length===0?<div style={{ background:"#f0fdf4", borderRadius:12, padding:"11px", border:"1px solid #bbf7d0" }}><p style={{ margin:0, fontSize:13, color:"#15803d", fontWeight:600 }}>✅ No waste risk — great management!</p></div>
           :wasteRisk.map(item=>{
             const days=Math.ceil((new Date(item.expiry)-new Date())/86400000);
@@ -299,7 +262,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={S.card}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>📋 VED Analysis</p><Tag label="COMPUTED" color="#2563eb" bg="#eff6ff" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}><p style={{ margin:0, fontWeight:800, fontSize:14 }}>📋 Vital vs. non-essential items</p><Tag label="COMPUTED" color="#2563eb" bg="#eff6ff" /></div>
           <p style={{ margin:"0 0 10px", fontSize:11, color:"#9ca3af" }}>Vital · Essential · Desirable — inferred from category, reorder & usage</p>
           {[{key:"V",label:"V — Vital",desc:"Baby, high reorder or frequent use",color:"#ef4444",bg:"#fef2f2",items:ved.V},
             {key:"E",label:"E — Essential",desc:"Regular use or moderate reorder",color:"#f97316",bg:"#fff7ed",items:ved.E},
@@ -318,7 +281,7 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
         </div>
 
         <div style={{ background:"#1e1b18", borderRadius:18, padding:"18px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}><p style={{ margin:0, fontWeight:800, fontSize:14, color:"white" }}>💰 Last 30 Days</p><Tag label="COMPUTED" color="#fcd34d" bg="rgba(255,255,255,0.1)" /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}><p style={{ margin:0, fontWeight:800, fontSize:14, color:"white" }}>💰 Your last 30 days</p><Tag label="COMPUTED" color="#fcd34d" bg="rgba(255,255,255,0.1)" /></div>
           <div style={{ display:"flex", gap:8 }}>
             {[{label:"Items Used",value:recentH.length,icon:"📦",color:"#60a5fa",sub:"log entries"},
               {label:"Spent",value:`₹${recentH.reduce((s,h)=>s+(h.cost||0),0).toFixed(0)}`,icon:"💰",color:"#fcd34d",sub:"estimated"},
@@ -337,4 +300,4 @@ export default function InsightsTab({ inventory, history, spaces, dismissedHints
       <NavBar />
     </div>
   );
-}
+})

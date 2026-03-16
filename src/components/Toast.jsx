@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import S from "../lib/styles.js";
 
 const COLORS = {
   success: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d", icon: "✅" },
-  error:   { bg: "#fef2f2", border: "#fecaca", text: "#991b1b", icon: "⚠️" },
+  error:   { bg: "#fef2f2", border: "#fecaca", text: "#991b1b", icon: null },
   info:    { bg: "#fff7ed", border: "#fde68a", text: "#92400e", icon: "💡" },
 };
 
@@ -31,7 +32,7 @@ export default function Toast({ message, type = "success", onDone }) {
       boxShadow: "0 4px 20px rgba(0,0,0,0.12)", maxWidth: "min(360px, 90vw)",
       fontFamily: "'DM Sans', sans-serif",
     }}>
-      <span style={{ fontSize: 16, flexShrink: 0 }}>{c.icon}</span>
+      {c.icon ? <span style={{ fontSize: 16, flexShrink: 0 }}>{c.icon}</span> : <span style={S.alertBadge()}>!</span>}
       <span style={{ fontSize: 13, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{message}</span>
     </div>
   );

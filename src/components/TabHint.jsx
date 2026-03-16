@@ -1,9 +1,9 @@
 const TAB_HINTS = {
-  home:     { icon:"🏠", text:"This is your dashboard — see stock levels, expiring items & quick stats. Tap 🛒 for your shopping list." },
-  spaces:   { icon:"🗄️", text:"Tap a space to see shelves inside. Add photos to remember what goes where!" },
-  add:      { icon:"➕", text:"Choose how to add: scan, photo, or manual. AI auto-fills details from photos." },
-  used:     { icon:"📉", text:"Tap any item to log usage. Try 🍽️ Cook to pick a recipe!" },
-  insights: { icon:"📊", text:"Your pantry intelligence — consumption trends, reorder predictions & waste alerts." },
+  home:     { icon:"🏠", text:"Welcome home! See what's running low, expiring soon, and your quick stats. Tap 🛒 for your shopping list." },
+  spaces:   { icon:"🗄️", text:"Tap a space to peek inside. Add photos so you always know what goes where!" },
+  add:      { icon:"➕", text:"Pick how you want to add: scan it, snap a photo, or type it in. AI does the heavy lifting ✨" },
+  used:     { icon:"📉", text:"Tap anything you've used today. Or hit 🍽️ What's cooking? to find a recipe!" },
+  insights: { icon:"📊", text:"Your pantry's brain — trends, predictions, and waste alerts all in one place." },
 };
 
 export default function TabHint({ tab, onDismiss }) {

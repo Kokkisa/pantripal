@@ -10,16 +10,16 @@ export default function ShopOverlay({ shoppingList, checkedShop, setCheckedShop,
 
   return (
     <div onClick={onClose} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:"min(390px,100vw)", background:"#faf9f7", borderRadius:"28px 28px 0 0", maxHeight:"85vh", overflow:"auto" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"min(390px,100vw)", background:"#faf9f7", borderRadius:"28px 28px 0 0", maxHeight:"85vh", overflow:"auto", animation:"slideUp 0.3s ease-out" }}>
         <div style={{ background:"#1e1b18", padding:"16px 18px 18px", borderRadius:"28px 28px 0 0", color:"white", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div><h1 style={{ fontSize:20, fontWeight:800, margin:"0 0 2px" }}>Shopping List 🛒</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>{shoppingList.length} items to restock</p></div>
+          <div><h1 style={{ fontSize:20, fontWeight:800, margin:"0 0 2px" }}>Your shopping list 🛒</h1><p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>{shoppingList.length} things to grab</p></div>
           <span onClick={onClose} style={{ color:"#9ca3af", fontSize:22, cursor:"pointer" }}>×</span>
         </div>
         <div style={{ padding:"14px 14px 32px" }}>
           {shoppingList.length === 0 ? (
             <div style={{ textAlign:"center", padding:"40px 20px" }}>
               <div style={{ fontSize:48, marginBottom:10 }}>🎉</div>
-              <p style={{ fontWeight:700, fontSize:16, margin:"0 0 4px" }}>All stocked up!</p>
+              <p style={{ fontWeight:700, fontSize:16, margin:"0 0 4px" }}>You're all stocked up! 🎉</p>
             </div>
           ) : shoppingList.map((item, i) => {
             const level = stockLevel(item.qty, item.reorder);
@@ -42,16 +42,16 @@ export default function ShopOverlay({ shoppingList, checkedShop, setCheckedShop,
                 </div>
                 <div style={{ display:"flex", gap:7 }}>
                   <div style={{ flex:1, background:SB[level], borderRadius:10, padding:"8px 10px", border:`1px solid ${SBo[level]}` }}>
-                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Have</p>
+                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Have</p>
                     <p style={{ margin:0, fontWeight:800, fontSize:15, color:SC[level] }}>{item.qty} <span style={{ fontSize:11, fontWeight:600 }}>{item.unit}</span></p>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", color:"#d1d5db", fontSize:16 }}>→</div>
                   <div style={{ flex:1, background:"#f0fdf4", borderRadius:10, padding:"8px 10px", border:"1px solid #bbf7d0" }}>
-                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Buy</p>
+                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Buy</p>
                     <p style={{ margin:0, fontWeight:800, fontSize:15, color:"#16a34a" }}>{needQty}+ <span style={{ fontSize:11, fontWeight:600 }}>{item.unit}</span></p>
                   </div>
                   <div style={{ flex:1.2, background:"#f9fafb", borderRadius:10, padding:"8px 10px", border:"1px solid #f0ede8" }}>
-                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Target</p>
+                    <p style={{ margin:"0 0 1px", fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.10em" }}>Target</p>
                     <p style={{ margin:0, fontWeight:800, fontSize:15, color:"#374151" }}>{item.reorder+1} <span style={{ fontSize:11, fontWeight:600 }}>{item.unit}</span></p>
                   </div>
                 </div>
@@ -77,7 +77,7 @@ export default function ShopOverlay({ shoppingList, checkedShop, setCheckedShop,
                     setTimeout(() => setCopyMsg(null), 2500);
                   }
                 }
-              }} style={{ ...S.btn("#16a34a"), marginTop:4 }}>📤 Share with {userMeta.partner||"Partner"}</button>
+              }} style={{ ...S.btn("#16a34a"), marginTop:4 }}>📤 Send to {userMeta.partner||"Partner"}</button>
               {copyMsg && (
                 <div style={{ background:"#f0fdf4", borderRadius:10, padding:"8px 14px", marginTop:8, textAlign:"center", border:"1px solid #bbf7d0" }}>
                   <p style={{ margin:0, fontSize:12, fontWeight:600, color:"#15803d" }}>✅ {copyMsg}</p>

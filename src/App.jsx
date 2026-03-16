@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense, useMemo } from "react";
 import { CATEGORIES, UNITS, DEFAULT_SPACES, SHELF_COLORS, SPACE_ICONS } from "./lib/pantriConstants.js";
 import { stockLevel, isExpiringSoon, getSmartUnit, matchBillItem, genId } from "./lib/pantriUtils.js";
 import { IS_DEMO, getFirebase } from "./lib/firebaseClient.js";
@@ -25,12 +25,12 @@ import ProfileOverlay from "./components/ProfileOverlay.jsx";
 import EditItemModal from "./components/EditItemModal.jsx";
 import ItemsList from "./components/ItemsList.jsx";
 
-// Tabs
-import HomeTab from "./tabs/HomeTab.jsx";
-import SpacesTab from "./tabs/SpacesTab.jsx";
-import AddTab from "./tabs/AddTab.jsx";
-import UsedTab from "./tabs/UsedTab.jsx";
-import InsightsTab from "./tabs/InsightsTab.jsx";
+// Tabs (lazy-loaded for code splitting)
+const HomeTab = lazy(() => import("./tabs/HomeTab.jsx"));
+const SpacesTab = lazy(() => import("./tabs/SpacesTab.jsx"));
+const AddTab = lazy(() => import("./tabs/AddTab.jsx"));
+const UsedTab = lazy(() => import("./tabs/UsedTab.jsx"));
+const InsightsTab = lazy(() => import("./tabs/InsightsTab.jsx"));
 
 // ══════════════════════════════════════════════════════════════
 // ─── MAIN APP ─────────────────────────────────────────────────
@@ -174,10 +174,23 @@ export default function PantriApp() {
     setDismissedHints(prev => ({ ...prev, [tab]: true }));
   };
 
-  // ── Derived ───────────────────────────────────────────────
-  const shoppingList = inventory.filter(i => stockLevel(i.qty, i.reorder) !== "good");
-  const expiringItems = inventory.filter(i => isExpiringSoon(i.expiry));
-  const babyItems = inventory.filter(i => i.category === "Baby");
+  // ── Derived (memoized to avoid recalculation on unrelated state changes) ──
+  const shoppingList = useMemo(() => inventory.filter(i => stockLevel(i.qty, i.reorder) !== "good"), [inventory]);
+  const expiringItems = useMemo(() => inventory.filter(i => isExpiringSoon(i.expiry)), [inventory]);
+  const babyItems = useMemo(() => inventory.filter(i => i.category === "Baby"), [inventory]);
+
+  // ── Authenticated fetch helper ───────────────────────────
+  const authFetch = async (url, options = {}) => {
+    if (!IS_DEMO) {
+      const fb = await getFirebase();
+      const currentUser = fb.auth.currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        options.headers = { ...options.headers, Authorization: `Bearer ${token}` };
+      }
+    }
+    return fetch(url, options);
+  };
 
   // ── Add-flow handlers ─────────────────────────────────────
   const resolveIntelligence = (name, overrideUnit=null) => {
@@ -220,7 +233,7 @@ export default function PantriApp() {
       const base64 = ev.target.result.split(",")[1];
       dispatch({ type: PHOTO_PREVIEW, imagePreview: ev.target.result });
       try {
-        const res = await fetch("/api/analyze", {
+        const res = await authFetch("/api/analyze", {
           method:"POST", headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
             messages:[{ role:"user", content:[
@@ -282,7 +295,7 @@ export default function PantriApp() {
           } catch {}
           if (!found) {
             try {
-              const res = await fetch("/api/analyze", {
+              const res = await authFetch("/api/analyze", {
                 method:"POST", headers:{ "Content-Type":"application/json" },
                 body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:500,
                   messages:[{ role:"user", content:[
@@ -364,7 +377,7 @@ export default function PantriApp() {
       const base64 = ev.target.result.split(",")[1];
       dispatch({ type: BILL_PREVIEW, imagePreview: ev.target.result });
       try {
-        const res = await fetch("/api/analyze", {
+        const res = await authFetch("/api/analyze", {
           method:"POST", headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:2000,
             messages:[{ role:"user", content:[
@@ -482,6 +495,7 @@ export default function PantriApp() {
       {editingItem && <EditItemModal item={editingItem} spaces={spaces} onSave={async (id, data) => { await updateItem(id, data); }} onDelete={async (id) => { await removeItem(id); }} onClose={() => setEditingItem(null)} />}
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
+      <Suspense fallback={<div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:400 }}><div style={{ width:36, height:36, border:"4px solid #d97706", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.9s linear infinite" }} /></div>}>
       {activeTab==="home"&&<HomeTab
         userMeta={userMeta} inventory={inventory} spaces={spaces}
         shoppingList={shoppingList} expiringItems={expiringItems} babyItems={babyItems}
@@ -548,6 +562,8 @@ export default function PantriApp() {
         dismissedHints={dismissedHints} onDismissHint={dismissHint}
         NavBar={NavBar}
       />}
+
+      </Suspense>
 
       {showSearch&&<SearchOverlay
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}

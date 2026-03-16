@@ -8,13 +8,30 @@ import { genId } from "../lib/pantriUtils.js";
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 export default function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState("welcome"); // welcome | login | signup
+  const [mode, setMode] = useState("welcome"); // welcome | login | signup | forgot
   const [name, setName] = useState("");
   const [partner, setPartner] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) return;
+    setLoading(true); setError("");
+    try {
+      const fb = await getFirebase();
+      await fb.sendPasswordResetEmail(fb.auth, email);
+      setResetSent(true);
+    } catch (e) {
+      const code = e.code;
+      if (code === "auth/user-not-found") setError("We couldn't find that email. Double-check it?");
+      else if (code === "auth/invalid-email") setError("That doesn't look like a valid email.");
+      else setError(e.message?.replace("Firebase: ", "") || "Something went wrong. Try again?");
+    }
+    setLoading(false);
+  };
 
   const handleGoogleComplete = async (cred, fb) => {
     const userDoc = await fb.getDoc(fb.doc(fb.db, "users", cred.user.uid));
@@ -52,7 +69,7 @@ export default function AuthScreen({ onAuth }) {
           await fb.signInWithRedirect(fb.auth, provider);
           return; // page will redirect
         } catch (e2) {
-          setError("Google sign-in failed. Please try again.");
+          setError("Google sign-in didn't work. Try once more?");
           setLoading(false);
         }
       } else if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") {
@@ -62,7 +79,7 @@ export default function AuthScreen({ onAuth }) {
         setError("An account already exists with this email. Try signing in with your email and password instead.");
         setLoading(false);
       } else {
-        setError(e.message?.replace("Firebase: ", "") || "Google sign-in failed. Please try again.");
+        setError(e.message?.replace("Firebase: ", "") || "Google sign-in didn't work. Try once more?");
         setLoading(false);
       }
     }
@@ -121,19 +138,19 @@ export default function AuthScreen({ onAuth }) {
       <div style={{ textAlign:"center" }}>
         <div style={{ fontSize:72, marginBottom:20 }}>🥫</div>
         <h1 style={{ fontSize:36, fontWeight:800, margin:"0 0 12px", letterSpacing:"-1.5px", color:"white", lineHeight:1.1 }}>PantriPal</h1>
-        <p style={{ fontSize:14, color:"#9ca3af", lineHeight:1.6, margin:0 }}>Smart pantry management for busy couples — know what you have, where it is, when to restock.</p>
+        <p style={{ fontSize:14, color:"#9ca3af", lineHeight:1.6, margin:0 }}>Your home, in your pocket. Always know what you have, where it is, and when to restock.</p>
       </div>
       <div style={S.gap(10)}>
         {IS_DEMO && (
           <div style={{ background:"rgba(217,119,6,0.15)", borderRadius:13, padding:"11px 14px", border:"1px solid rgba(217,119,6,0.3)" }}>
-            <p style={{ margin:0, fontSize:12, color:"#fcd34d", fontWeight:600 }}>🔧 Demo Mode — Firebase config not set yet. App works with local data.</p>
+            <p style={{ margin:0, fontSize:12, color:"#fcd34d", fontWeight:600 }}>🔧 You're in preview mode — nothing saves yet, but everything works.</p>
           </div>
         )}
         {!IS_DEMO && googleBtn}
         {!IS_DEMO && <div style={{ display:"flex", alignItems:"center", gap:12 }}><div style={{ flex:1, height:1, background:"rgba(255,255,255,0.15)" }}/><span style={{ fontSize:11, color:"#6b7280", fontWeight:600 }}>OR</span><div style={{ flex:1, height:1, background:"rgba(255,255,255,0.15)" }}/></div>}
-        <button style={S.btn("#d97706")} onClick={() => setMode("signup")}>Create Account →</button>
-        <button style={{ ...S.outline, color:"white", borderColor:"rgba(255,255,255,0.2)" }} onClick={() => setMode("login")}>I already have an account</button>
-        {IS_DEMO && <button style={{ ...S.outline, color:"#9ca3af", borderColor:"rgba(255,255,255,0.1)" }} onClick={() => onAuth({ uid:"demo" }, { name:"Nithin", partner:"Swetha", householdId:"demo", isNew:false })}>Explore Demo →</button>}
+        <button style={S.btn("#d97706")} onClick={() => setMode("signup")}>Set up your pantry →</button>
+        <button style={{ ...S.outline, color:"white", borderColor:"rgba(255,255,255,0.2)" }} onClick={() => setMode("login")}>Sign back in →</button>
+        {IS_DEMO && <button style={{ ...S.outline, color:"#9ca3af", borderColor:"rgba(255,255,255,0.1)" }} onClick={() => onAuth({ uid:"demo" }, { name:"Nithin", partner:"Swetha", householdId:"demo", isNew:false })}>Take a peek first →</button>}
       </div>
     </div>
   );
@@ -144,15 +161,15 @@ export default function AuthScreen({ onAuth }) {
       <div style={{ display:"flex", alignItems:"center", marginBottom:24 }}>
         <button style={S.back} onClick={() => setMode("welcome")}>‹</button>
         <div>
-          <h2 style={{ fontSize:24, fontWeight:800, margin:0, color:"#1e1b18" }}>Create Account</h2>
-          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>Set up your household pantry</p>
+          <h2 style={{ fontSize:24, fontWeight:800, margin:0, color:"#1e1b18" }}>Create your pantry</h2>
+          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>Tell us who's home</p>
         </div>
       </div>
       <div style={S.gap(14)}>
         <div style={S.card}>
           <div style={S.gap(12)}>
-            <div><label style={S.label}>Your Name</label><input style={S.input} placeholder="e.g. Nithin" value={name} onChange={e=>setName(e.target.value)} autoFocus /></div>
-            <div><label style={S.label}>Partner's Name (optional)</label><input style={S.input} placeholder="e.g. Swetha" value={partner} onChange={e=>setPartner(e.target.value)} /></div>
+            <div><label style={S.label}>What should we call you?</label><input style={S.input} placeholder="e.g. Nithin" value={name} onChange={e=>setName(e.target.value)} autoFocus /></div>
+            <div><label style={S.label}>Who else lives here? (optional)</label><input style={S.input} placeholder="e.g. Swetha" value={partner} onChange={e=>setPartner(e.target.value)} /></div>
           </div>
         </div>
         <div style={S.card}>
@@ -161,12 +178,46 @@ export default function AuthScreen({ onAuth }) {
             <div><label style={S.label}>Password</label><input style={S.input} type="password" placeholder="Min 6 characters" value={password} onChange={e=>setPassword(e.target.value)} /></div>
           </div>
         </div>
-        {error && <div style={{ background:"#fef2f2", borderRadius:12, padding:"11px 13px", border:"1px solid #fecaca" }}><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>⚠️ {error}</p></div>}
+        {error && <div style={{ background:"#fef2f2", borderRadius:12, padding:"11px 13px", border:"1px solid #fecaca" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge()}>!</span><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>{error}</p></div></div>}
         <button style={S.btn(name&&email&&password?"#1e1b18":"#e5e7eb","white",!(name&&email&&password)||loading)} disabled={!(name&&email&&password)||loading} onClick={handleSignup}>
-          {loading ? "Creating account..." : "Create My Pantri →"}
+          {loading ? "Creating account..." : "We're ready. Let's go →"}
         </button>
         {!IS_DEMO && <><div style={{ display:"flex", alignItems:"center", gap:12 }}><div style={{ flex:1, height:1, background:"#e5e7eb" }}/><span style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>OR</span><div style={{ flex:1, height:1, background:"#e5e7eb" }}/></div>{googleBtn}</>}
         <p style={{ textAlign:"center", fontSize:12, color:"#9ca3af", margin:0 }}>Already have an account? <span onClick={()=>setMode("login")} style={{ color:"#d97706", fontWeight:700, cursor:"pointer" }}>Sign in</span></p>
+      </div>
+    </div>
+  );
+
+  // Forgot Password
+  if (mode === "forgot") return (
+    <div style={{ minHeight:"100vh", background:"#faf9f7", padding:"28px 24px" }}>
+      <div style={{ display:"flex", alignItems:"center", marginBottom:24 }}>
+        <button style={S.back} onClick={() => { setError(""); setResetSent(false); setMode("login"); }}>‹</button>
+        <div>
+          <h2 style={{ fontSize:24, fontWeight:800, margin:0, color:"#1e1b18" }}>Reset your password</h2>
+          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>No worries — happens to everyone</p>
+        </div>
+      </div>
+      <div style={S.gap(14)}>
+        {resetSent ? (
+          <div style={{ textAlign:"center", padding:"32px 16px" }}>
+            <div style={{ fontSize:56, marginBottom:14 }}>📬</div>
+            <h3 style={{ fontSize:18, fontWeight:800, margin:"0 0 8px", color:"#1e1b18" }}>Check your inbox!</h3>
+            <p style={{ fontSize:13, color:"#6b7280", margin:"0 0 24px", lineHeight:1.5 }}>We sent a reset link to <strong>{email}</strong>. Follow the link to set a new password, then come back and sign in.</p>
+            <button style={S.btn("#1e1b18")} onClick={() => { setResetSent(false); setError(""); setMode("login"); }}>Back to sign in →</button>
+          </div>
+        ) : (
+          <>
+            <div style={S.card}>
+              <div><label style={S.label}>Your email</label><input style={S.input} type="email" placeholder="your@email.com" value={email} onChange={e=>setEmail(e.target.value)} autoFocus /></div>
+            </div>
+            {error && <div style={{ background:"#fef2f2", borderRadius:12, padding:"11px 13px", border:"1px solid #fecaca" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge()}>!</span><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>{error}</p></div></div>}
+            <button style={S.btn(email?"#d97706":"#e5e7eb","white",!email||loading)} disabled={!email||loading} onClick={handleForgotPassword}>
+              {loading ? "Sending..." : "Send me a reset link →"}
+            </button>
+            <p style={{ textAlign:"center", fontSize:12, color:"#9ca3af", margin:0 }}>Remember it? <span onClick={()=>{setError("");setMode("login");}} style={{ color:"#d97706", fontWeight:700, cursor:"pointer" }}>Sign in</span></p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -177,8 +228,8 @@ export default function AuthScreen({ onAuth }) {
       <div style={{ display:"flex", alignItems:"center", marginBottom:24 }}>
         <button style={S.back} onClick={() => setMode("welcome")}>‹</button>
         <div>
-          <h2 style={{ fontSize:24, fontWeight:800, margin:0, color:"#1e1b18" }}>Welcome Back</h2>
-          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>Sign in to your pantry</p>
+          <h2 style={{ fontSize:24, fontWeight:800, margin:0, color:"#1e1b18" }}>Good to see you again</h2>
+          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>Your pantry missed you</p>
         </div>
       </div>
       <div style={S.gap(14)}>
@@ -186,11 +237,12 @@ export default function AuthScreen({ onAuth }) {
           <div style={S.gap(12)}>
             <div><label style={S.label}>Email</label><input style={S.input} type="email" placeholder="your@email.com" value={email} onChange={e=>setEmail(e.target.value)} autoFocus /></div>
             <div><label style={S.label}>Password</label><input style={S.input} type="password" placeholder="Your password" value={password} onChange={e=>setPassword(e.target.value)} /></div>
+            <p style={{ margin:0, textAlign:"right" }}><span onClick={()=>{setError("");setResetSent(false);setMode("forgot");}} style={{ fontSize:12, color:"#d97706", fontWeight:600, cursor:"pointer" }}>Forgot password?</span></p>
           </div>
         </div>
-        {error && <div style={{ background:"#fef2f2", borderRadius:12, padding:"11px 13px", border:"1px solid #fecaca" }}><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>⚠️ {error}</p></div>}
+        {error && <div style={{ background:"#fef2f2", borderRadius:12, padding:"11px 13px", border:"1px solid #fecaca" }}><div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={S.alertBadge()}>!</span><p style={{ margin:0, fontSize:12, color:"#991b1b", fontWeight:600 }}>{error}</p></div></div>}
         <button style={S.btn(email&&password?"#1e1b18":"#e5e7eb","white",!(email&&password)||loading)} disabled={!(email&&password)||loading} onClick={handleLogin}>
-          {loading ? "Signing in..." : "Sign In →"}
+          {loading ? "Signing in..." : "Let me in →"}
         </button>
         {!IS_DEMO && <><div style={{ display:"flex", alignItems:"center", gap:12 }}><div style={{ flex:1, height:1, background:"#e5e7eb" }}/><span style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>OR</span><div style={{ flex:1, height:1, background:"#e5e7eb" }}/></div>{googleBtn}</>}
         <p style={{ textAlign:"center", fontSize:12, color:"#9ca3af", margin:0 }}>No account? <span onClick={()=>setMode("signup")} style={{ color:"#d97706", fontWeight:700, cursor:"pointer" }}>Create one</span></p>
