@@ -1,4 +1,4 @@
-const CACHE = "pantri-v1";
+const CACHE = "pantripal-v1";
 const PRECACHE = ["/", "/index.html"];
 
 self.addEventListener("install", (e) => {

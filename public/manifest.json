@@ -1,6 +1,6 @@
 {
-  "name": "Pantri",
-  "short_name": "Pantri",
+  "name": "PantriPal",
+  "short_name": "PantriPal",
   "description": "Smart home pantry management",
   "start_url": "/",
   "display": "standalone",
