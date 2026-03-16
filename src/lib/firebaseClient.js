@@ -14,6 +14,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -98,6 +99,7 @@ function _bundle() {
     signInWithRedirect,
     getRedirectResult,
     GoogleAuthProvider,
+    sendPasswordResetEmail,
     // Firestore helpers
     doc,
     setDoc,

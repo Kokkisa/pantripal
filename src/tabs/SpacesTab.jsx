@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import S from "../lib/styles.js";
 import { IS_DEMO, getFirebase } from "../lib/firebaseClient.js";
 import { stockLevel, compressImage } from "../lib/pantriUtils.js";
@@ -10,7 +10,7 @@ import AddSpaceForm from "../components/AddSpaceForm.jsx";
 import TabHint from "../components/TabHint.jsx";
 import Toast from "../components/Toast.jsx";
 
-export default function SpacesTab({
+export default memo(function SpacesTab({
   spaces, setSpaces, inventory, userMeta, photoVersion, setPhotoVersion,
   spaceScreen, setSpaceScreen, selectedSpace, setSelectedSpace,
   editingSpace, setEditingSpace, editingShelf, setEditingShelf,
@@ -75,7 +75,7 @@ export default function SpacesTab({
       await fb.updateDoc(fb.doc(fb.db, "households", hid), { spaces: spacesForFirestore });
     } catch(err) {
       console.error("saveSpaces error:", err);
-      setSpaceError("Save failed: " + err.message);
+      setSpaceError("Couldn't save — " + err.message + ". Try again?");
     } finally {
       setSpaceSaving(false);
     }
@@ -145,7 +145,7 @@ export default function SpacesTab({
     if (!space || !space.shelves) return (
       <div>
         <div style={S.dh()}><button style={S.back} onClick={() => setSpaceScreen("list")}>‹</button><span style={{color:"white"}}>Back</span></div>
-        <div style={{padding:20,textAlign:"center",color:"#ef4444"}}>Space data missing — tap back and re-open</div>
+        <div style={{padding:20,textAlign:"center",color:"#ef4444"}}>Something's off — head back and try again</div>
         <NavBar />
       </div>
     );
@@ -333,7 +333,7 @@ export default function SpacesTab({
               onCancel={() => setShowAddShelf(null)}
             />
           ) : (
-            <button onClick={() => setShowAddShelf(space.id)} style={{ width:"100%", background:"white", border:"2px dashed #d1d5db", borderRadius:16, padding:"14px", color:"#6b7280", fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Add Shelf</button>
+            <button onClick={() => setShowAddShelf(space.id)} style={{ width:"100%", background:"white", border:"2px dashed #d1d5db", borderRadius:16, padding:"14px", color:"#6b7280", fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Add a shelf</button>
           )}
         </div>
         {spaceError && <Toast message={spaceError} type="error" onDone={() => setSpaceError(null)} />}
@@ -348,10 +348,10 @@ export default function SpacesTab({
       <div style={S.dh()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>My Spaces</h1>
-            <p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Your virtual warehouse</p>
+            <h1 style={{ fontSize:22, fontWeight:800, margin:"0 0 2px" }}>Your spaces</h1>
+            <p style={{ color:"#9ca3af", margin:0, fontSize:12 }}>Everything has its place</p>
           </div>
-          <button onClick={() => setShowAddSpace(true)} style={{ background:"#d97706", border:"none", borderRadius:12, padding:"8px 14px", color:"white", fontSize:12, fontWeight:700, cursor:"pointer" }}>+ New Space</button>
+          <button onClick={() => setShowAddSpace(true)} style={{ background:"#d97706", border:"none", borderRadius:12, padding:"8px 14px", color:"white", fontSize:12, fontWeight:700, cursor:"pointer" }}>+ New space</button>
         </div>
       </div>
       {showAddSpace && (
@@ -380,7 +380,7 @@ export default function SpacesTab({
                   <p style={{ margin:0, fontWeight:800, fontSize:16 }}>{space.name}</p>
                   <p style={{ margin:0, fontSize:12, color:"#6b7280" }}>{space.shelves.length} {space.shelves.length===1?"shelf":"shelves"} · {items.length} {items.length===1?"item":"items"}</p>
                 </div>
-                {low > 0 && <span style={{ background:"#fff7ed", color:"#ea580c", fontSize:11, fontWeight:800, borderRadius:9, padding:"3px 9px" }}>{low} low</span>}
+                {low > 0 && <span style={{ background:"#fff7ed", color:"#ea580c", fontSize:11, fontWeight:800, borderRadius:9, padding:"3px 9px" }}>{low} running low</span>}
                 <span style={{ fontSize:18, color:space.accent }}>›</span>
               </div>
               <div style={{ display:"flex", gap:6 }}>
@@ -397,9 +397,9 @@ export default function SpacesTab({
         {spaces.length === 0 && (
           <div style={S.emptyWrap}>
             <div style={S.emptyIcon}>🗄️</div>
-            <p style={S.emptyTitle}>No spaces yet</p>
-            <p style={S.emptySub}>Create your first space to start organizing</p>
-            <button onClick={() => setShowAddSpace(true)} style={{ background:"#d97706", color:"white", border:"none", borderRadius:13, padding:"12px 24px", fontWeight:700, cursor:"pointer" }}>+ Create First Space</button>
+            <p style={S.emptyTitle}>No spaces yet — add your first one!</p>
+            <p style={S.emptySub}>Tap below to set up your first storage spot</p>
+            <button onClick={() => setShowAddSpace(true)} style={{ background:"#d97706", color:"white", border:"none", borderRadius:13, padding:"12px 24px", fontWeight:700, cursor:"pointer" }}>+ Add my first space</button>
           </div>
         )}
       </div>
@@ -407,4 +407,4 @@ export default function SpacesTab({
       <NavBar />
     </div>
   );
-}
+})

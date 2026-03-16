@@ -6,7 +6,7 @@ const S = {
 
   // ── Form elements ────────────────────────────────────────────
   input: { width:"100%", background:"white", border:"2px solid #f0ede8", borderRadius:13, padding:"12px 14px", fontSize:14, fontWeight:600, outline:"none", boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif", color:"#1e1b18" },
-  label: { fontSize:11, fontWeight:700, color:"#9ca3af", letterSpacing:"0.07em", textTransform:"uppercase", display:"block", marginBottom:6 },
+  label: { fontSize:11, fontWeight:700, color:"#9ca3af", letterSpacing:"0.10em", textTransform:"uppercase", display:"block", marginBottom:6 },
 
   // ── Layout primitives ────────────────────────────────────────
   card: { background:"white", borderRadius:18, padding:"14px", boxShadow:"0 2px 8px rgba(0,0,0,0.05)", marginBottom:10 },
@@ -33,6 +33,9 @@ const S = {
 
   // ── Status badge ─────────────────────────────────────────────
   badge: (bg, color) => ({ background:bg, color, fontSize:10, fontWeight:800, borderRadius:8, padding:"3px 8px" }),
+
+  // ── Circular alert badge (replaces ⚠️) ──────────────────────
+  alertBadge: (bg="#ef4444") => ({ display:"inline-flex", alignItems:"center", justifyContent:"center", width:16, height:16, borderRadius:"50%", background:bg, color:"white", fontSize:10, fontWeight:800, lineHeight:1, flexShrink:0 }),
 
   // ── Empty state container ────────────────────────────────────
   emptyWrap: { textAlign:"center", padding:"50px 20px", color:"#9ca3af" },
